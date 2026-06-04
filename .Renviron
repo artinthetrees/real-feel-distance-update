@@ -1,0 +1,2 @@
+# Set the tigris cache directory
+TIGRIS_CACHE_DIR = "/home/rstudio/project/tigriscache/"

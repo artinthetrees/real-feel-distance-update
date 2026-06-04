@@ -1,0 +1,5 @@
+.env
+renv/
+tigriscache/
+data/
+.Rproj.user/
