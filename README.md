@@ -1,4 +1,4 @@
-To run real-feel-distance pipeline in docker 
+To run real-feel-distance pipeline in docker container
 
 1. Make sure docker container is built correctly and up and running - this will check for if image already built and if any changes to Dockerfile since last build. 
 
@@ -20,4 +20,11 @@ docker exec -it -w /home/rstudio/project container-name bash
 
 ```local-container shell
 make -f make-pipeline.mk CONFIG=configs/configfilename
+```
+
+4. Exit docker container shell to return to local shell
+
+```local-container shell
+exit
+
 ```
