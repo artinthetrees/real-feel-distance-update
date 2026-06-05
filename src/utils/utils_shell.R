@@ -7,7 +7,7 @@ get_config_vars_from_shell <- function(){
   crs_datum <- commandArgs(trailingOnly=TRUE)[[5]]
   output_dir <- commandArgs(trailingOnly=TRUE)[[6]]
   census_api_key <- commandArgs(trailingOnly=TRUE)[[7]]
-  message("city is: ", county_string)
+  message("city is: ", city_string)
   message("county is: ", county_string)
   message("state is: ", state_string)
   message("year is: ", year_num)
