@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libcurl4-openssl-dev \
     libabsl-dev \
+    nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
