@@ -19,7 +19,7 @@ docker exec -it -w /home/rstudio/project container-name bash
 3. Run pipeline make file with appropriate config file
 
 ```local-container shell
-make -f make-pipeline.mk CONFIG=configs/configfilename
+make -f make-pipeline.mk CONFIG=/home/rstudio/project/configs/configfilename
 ```
 
 4. Exit docker container shell to return to local shell
