@@ -17,7 +17,7 @@ $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME): src/02_get_boundary_ma
 	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY)
 
 # 01 get crs
-$(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME): src/test.R src/utils/utils_get_crs.R src/utils/utils_shell.R src/utils/utils.R 
+$(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME): src/01_get_crs.R src/utils/utils_get_crs.R src/utils/utils_shell.R src/utils/utils.R 
 	mkdir -p $(OUTPUT_DIR)/crs
 	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY)
 
