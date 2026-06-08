@@ -4,13 +4,18 @@
 
 `%>%` <- magrittr::`%>%`
 
+get_file_safe_string <- function(input_string){
+
+  return(sub(" ","_",input_string))
+}
+
 get_city_year_output_filename <- function(city_string,year_num,save_file_type="Rdata"){
-  fname <- paste0(city_string,"_",as.character(year_num),".",save_file_type)
+  fname <- paste0(get_file_safe_string(city_string),"_",as.character(year_num),".",save_file_type)
   return(fname)
 }
 
 get_city_output_filename <- function(city_string,save_file_type="Rdata"){
-  fname <- paste0(city_string,".",save_file_type)
+  fname <- paste0(get_file_safe_string(city_string),".",save_file_type)
   return(fname)
 }
 
