@@ -1,4 +1,5 @@
 library(tidyverse)
+source("src/utils/utils_geo.R")
 
 
 pts_to_streetnet_vertices_ids <- function(streetnet_vertices,pts_array.lonlat){
