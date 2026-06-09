@@ -43,13 +43,15 @@ library(dplyr)
 #################################################################
 # create output file path specific to this script
 
-output_folder <- Gmisc::pathJoin(output_dir,"grocery")
+if (interactive()) {
+  output_folder <- Gmisc::pathJoin(output_dir,"grocery")
+  if (!dir.exists(output_folder)) {
+    dir.create(output_folder)
+  }
+}
+
 output_path <- Gmisc::pathJoin(output_dir,"grocery",city_year_output_fname)
 print(output_path)
-
-if (!dir.exists(output_folder)) {
-  dir.create(output_folder)
-}
 
 #################################################################
 # pull in objs needed from previous parts of pipeline for this step
