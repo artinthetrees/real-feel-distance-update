@@ -38,6 +38,7 @@ message("city output file name is: ", city_output_fname)
 
 #################################################################
 # source utils specific to this script
+source("./src/utils/utils_get_streetnet.R")
 source("./src/utils/utils_get_distances.R")
 
 #################################################################
@@ -55,15 +56,15 @@ print(output_path)
 #################################################################
 # pull in objs needed from previous parts of pipeline for this step
 
-crs_utm <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"intermediate","crs",city_year_output_fname),obj_name = crs_utm)
+crs_utm <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"crs",city_year_output_fname),obj_name = crs_utm)
 print(crs_utm)
-crs_lonlat <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"intermediate","crs",city_year_output_fname),obj_name = crs_lonlat)
+crs_lonlat <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"crs",city_year_output_fname),obj_name = crs_lonlat)
 print(crs_utm)
 
 # streetnet_vertices <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"intermediate","street_network_products",city_output_fname),obj_name = v)
 # streetnet_graph <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"intermediate","street_network_products",city_output_fname),obj_name = graph)
 
-grocery.sf.utm <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"grocery",city_year_output_fname),obj_name = grocery.sf.utm)
+grocery.utm <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"grocery",city_year_output_fname),obj_name = grocery.sf.utm)
 tracts.within.city.utm <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"boundary_maps",city_year_output_fname),obj_name = tracts.within.city.utm)
 
 # to test/debug just use the first n tracts
@@ -76,15 +77,40 @@ distances_df_list <- list()
 summary_distances_df_list <- list()
 
 for (i in 1:nrow(tracts.within.city.utm)){
-  one_tract_sf.utm <- tracts.within.city.utm[i,]
+  one_tract.utm <- tracts.within.city.utm[i,]
   
   tract_id <- i
   print(tract_id)
+
+  ################################### get streetnet, graph,and vertices for this tract plus 2km buffer
+  ### get 2km buffer boundary
+  one_tract.2km.buffer.utm <- 
+  sf::st_buffer(one_tract.utm, dist = 2000)
+  ###
+
+  ### get bbox params appropriately formatted for dodgr_streetnet fx
+  boundary.utm <- one_tract.2km.buffer.utm
+  boundary.lonlat <- boundary.utm %>% sf::st_transform(crs=crs_lonlat)
+  # create bounding box vector of coordinates from boundary lonlat sf - named vector in xmin, ymin, xmax, ymax order
+  sf_bb <- sf::st_bbox(boundary.lonlat)
+  # convert bounding box vector of coordinates to osmdata bounding box matrix format >> input to dodgr streetnet fx
+  sf_bb_to_osmdata_bb <- bbox_coords_to_osmdata_bb(bbox_coords = sf_bb)
+  ###
+
+  ### get dodgr streetnet, graph, and vertices objects
+  streetnet_query_date <- Sys.Date()
   
+  streetnet_sf.lonlat <- get_streetnet_sf_dodgr(osmdata_bb = sf_bb_to_osmdata_bb, expand = 0)
+  streetnet_graph <- dodgr::weight_streetnet (streetnet_sf.lonlat, wt_profile = "foot")
+  streetnet_vertices <- dodgr::dodgr_vertices (streetnet_graph)
+  ###
+  ###################################
+
+
   my_distances <- 
     get_distances_df(
-      one_tract_sf.utm = one_tract_sf.utm,
-      grocery_sf.utm = grocery_sf.utm, 
+      one_tract_sf.utm = one_tract.utm,
+      grocery_sf.utm = grocery.utm, 
       streetnet_vertices = streetnet_vertices, 
       streetnet_graph = streetnet_graph, 
       crs_lonlat = crs_lonlat, 
