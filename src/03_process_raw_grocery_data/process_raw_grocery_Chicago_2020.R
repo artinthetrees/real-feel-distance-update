@@ -43,8 +43,13 @@ library(dplyr)
 #################################################################
 # create output file path specific to this script
 
+output_folder <- Gmisc::pathJoin(output_dir,"grocery")
 output_path <- Gmisc::pathJoin(output_dir,"grocery",city_year_output_fname)
 print(output_path)
+
+if (!dir.exists(output_folder)) {
+  dir.create(output_folder)
+}
 
 #################################################################
 # pull in objs needed from previous parts of pipeline for this step
@@ -114,6 +119,7 @@ if (dir.exists(raw_data_folder_path)) {
   # save for this step
 
   save(
+    grocery.df
     grocery.sf.lonlat,
     grocery.sf.utm,
     file = output_path
