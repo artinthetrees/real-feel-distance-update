@@ -26,7 +26,7 @@ crs: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
 # 	touch -a $(OUTPUT_DIR)/street_network/street_network_created/$(CITY_FILE_SAFE)_streetnetwork_created.txt
 
 # 04 get distance to grocery
-$(OUTPUT_DIR)/distance_to_grocery/$(CITY_YEAR_OUTPUT_FILENAME): src/04_get_distance_to_grocery.R src/utills/utils_get_streetnet.R src/utils/utils_get_distance.R src/utils/utils_shell.R src/utils/utils.R $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/grocery/$(CITY_YEAR_OUTPUT_FILENAME)
+$(OUTPUT_DIR)/distance_to_grocery/$(CITY_YEAR_OUTPUT_FILENAME): src/04_get_distance_to_grocery.R src/utils/utils_get_streetnet.R src/utils/utils_get_distance.R src/utils/utils_shell.R src/utils/utils.R $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/grocery/$(CITY_YEAR_OUTPUT_FILENAME)
 	mkdir -p $(OUTPUT_DIR)/distance_to_grocery
 	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY)
 
