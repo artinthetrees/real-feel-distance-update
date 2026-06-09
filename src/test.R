@@ -1,3 +1,5 @@
+#https://urbananalyst.github.io/dodgr/reference/index.html
+
 output_dir <- "data"
 city_year_output_fname <- "Chicago_2020.Rdata"
 
@@ -43,6 +45,7 @@ streetnet_query_date <- Sys.Date()
 streetnet_sf.lonlat <- get_streetnet_sf_dodgr(osmdata_bb = sf_bb_to_osmdata_bb, expand = 0)
 
 graph <- dodgr::weight_streetnet (streetnet_sf.lonlat, wt_profile = "foot")
+#graph_weighted_for_cycle <- dodgr::weight_streetnet (streetnet_sf.lonlat, wt_profile = "bicycle")
 
 v <- dodgr::dodgr_vertices (graph)
 
