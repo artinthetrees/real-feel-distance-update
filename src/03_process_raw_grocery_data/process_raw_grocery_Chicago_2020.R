@@ -66,7 +66,8 @@ print(crs_lonlat)
 city_year_file_safe <- get_city_year_output_filename(city_string=city_string,year_num=year_num,save_file_type=NULL)
 message("city year file safe string is: ", city_year_file_safe)
 
-raw_data_folder_path <- Gmisc::pathJoin(raw_grocery_data,city_year_file_safe)
+raw_data_folder_path <- Gmisc::pathJoin("raw_grocery_data",city_year_file_safe)
+message("raw data folder path is: ", raw_data_folder_path)
 
 if (dir.exists(raw_data_folder_path)) {
 
@@ -119,7 +120,7 @@ if (dir.exists(raw_data_folder_path)) {
   # save for this step
 
   save(
-    grocery.df
+    grocery.df,
     grocery.sf.lonlat,
     grocery.sf.utm,
     file = output_path
