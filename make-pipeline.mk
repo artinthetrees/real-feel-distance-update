@@ -8,14 +8,25 @@ include $(CONFIG_FILE)
 include vars.mk
 include .env
 
-.PHONY: configtest
+.PHONY: all boundary boundaryplots grocery configtest
 
-# 03 get streetnet
-$(OUTPUT_DIR)/street_network/$(CITY_OUTPUT_FILENAME): src/03_get_streetnet.R $(OUTPUT_DIR)/crs/crs_created/$(CITY_FILE_SAFE)_crs_created.txt $(OUTPUT_DIR)/boundary_maps/boundary_maps_created/$(CITY_FILE_SAFE)_boundary_maps_created.txt 
-	mkdir -p $(OUTPUT_DIR)/street_network
-	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY) 
-	mkdir -p $(OUTPUT_DIR)/street_network/street_network_created
-	touch -a $(OUTPUT_DIR)/street_network/street_network_created/$(CITY_FILE_SAFE)_streetnetwork_created.txt
+all: configtest boundary boundaryplots grocery
+
+boundaryplots: $(OUTPUT_DIR)/boundary_map_plots/$(CITY_YEAR_OUTPUT_FILENAME)
+boundary: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
+grocery: $(OUTPUT_DIR)/grocery/$(CITY_YEAR_OUTPUT_FILENAME)
+
+# # 03 get streetnet
+# $(OUTPUT_DIR)/street_network/$(CITY_OUTPUT_FILENAME): src/03_get_streetnet.R $(OUTPUT_DIR)/crs/crs_created/$(CITY_FILE_SAFE)_crs_created.txt $(OUTPUT_DIR)/boundary_maps/boundary_maps_created/$(CITY_FILE_SAFE)_boundary_maps_created.txt 
+# 	mkdir -p $(OUTPUT_DIR)/street_network
+# 	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY) 
+# 	mkdir -p $(OUTPUT_DIR)/street_network/street_network_created
+# 	touch -a $(OUTPUT_DIR)/street_network/street_network_created/$(CITY_FILE_SAFE)_streetnetwork_created.txt
+
+# 03 get grocery
+$(OUTPUT_DIR)/grocery/$(CITY_YEAR_OUTPUT_FILENAME): src/03_process_raw_grocery_data/process_raw_grocery_$(CITY_FILE_SAFE)_$(YEAR).R src/utils/utils_shell.R src/utils/utils.R $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME)
+	mkdir -p $(OUTPUT_DIR)/grocery
+	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY)
 
 # 02b get boundary map plots
 $(OUTPUT_DIR)/boundary_map_plots/$(CITY_YEAR_OUTPUT_FILENAME): src/02b_get_boundary_map_plots.R src/utils/utils_shell.R src/utils/utils.R $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME)
