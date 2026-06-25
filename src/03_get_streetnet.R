@@ -18,6 +18,8 @@ if(!interactive()){
     crs_datum <- commandArgs(trailingOnly=TRUE)[[5]]
     output_dir <- commandArgs(trailingOnly=TRUE)[[6]]
     census_api_key <- commandArgs(trailingOnly=TRUE)[[7]]
+    streetnet_datetime <- commandArgs(trailingOnly=TRUE)[[8]]
+    osm_overpass_api_timeout <- as.numeric(commandArgs(trailingOnly=TRUE)[[9]])
     message("city is: ", city_string)
     message("county is: ", county_string)
     message("state is: ", state_string)
@@ -25,6 +27,8 @@ if(!interactive()){
     message("crs datum is: ", crs_datum)
     message("output dir is: ", output_dir)
     message("census api key is: ", census_api_key)
+    message("streetnet datetime: ", streetnet_datetime)
+    message("osm overpass api timeout: ", osm_overpass_api_timeout)
 }
 
 #################################################################
@@ -36,6 +40,9 @@ message("city year output file name is: ", city_year_output_fname)
 city_output_fname <- get_city_output_filename(city_string=city_string,save_file_type="Rdata")
 message("city output file name is: ", city_output_fname)
 
+city_output_fname_parquet <- get_city_output_filename(city_string=city_string,save_file_type="parquet")
+message("city output file name parquet is: ", city_output_fname_parquet)
+
 #################################################################
 # source utils specific to this script
 source("./src/utils/utils_get_streetnet.R")
@@ -43,7 +50,7 @@ source("./src/utils/utils_get_streetnet.R")
 #################################################################
 # create output file path specific to this script
 
-output_path <- Gmisc::pathJoin(output_dir,"street_network",city_output_fname)
+output_path <- Gmisc::pathJoin(output_dir,"street_network",city_output_fname_parquet)
 print(output_path)
 
 #################################################################
@@ -70,69 +77,95 @@ boundary.lonlat <- boundary.utm %>% sf::st_transform(crs=crs_lonlat)
 sf_bb <- sf::st_bbox(boundary.lonlat)
 
 # convert bounding box vector of coordinates to sf >> input to ohsome streetnet fx
-sf_bb_to_sf <- bbox_coords_to_sf(bbox_coords = sf_bb,crs=crs_lonlat)
-
+#sf_bb_to_sf <- bbox_coords_to_sf(bbox_coords = sf_bb,crs=crs_lonlat)
 # ggplot2::ggplot() + ggplot2::geom_sf(data=sf_bb_to_sf) + ggplot2::geom_sf(data=boundary.lonlat)
 
 # convert bounding box vector of coordinates to osmdata bounding box matrix format >> input to dodgr streetnet fx
 sf_bb_to_osmdata_bb <- bbox_coords_to_osmdata_bb(bbox_coords = sf_bb)
 
-streetnet_query_date <- Sys.Date()
-streetnet_sf.lonlat <- get_streetnet_sf_dodgr(osmdata_bb = sf_bb_to_osmdata_bb, expand = 0)
+# streetnet_query_date <- Sys.Date()
+# streetnet_sf.lonlat <- get_streetnet_sf_dodgr(osmdata_bb = sf_bb_to_osmdata_bb, expand = 0)
+
+###############################################
+
+api_endpoint <- osmdata::get_overpass_url()
+osmdata::set_overpass_url("https://overpass-api.de/api/interpreter")
+api_endpoint <- osmdata::get_overpass_url()
+
+###############################################
+
+bb <- sf_bb_to_osmdata_bb
+
+queue <- split_bbox (bb)
+result <- list ()
+
+while (length (queue) > 0) {
+  
+  print (queue [[1]])
+  
+  opres <- NULL
+  opres <- try ({
+    osmdata::opq (bbox = queue [[1]], datetime = streetnet_datetime, timeout = osm_overpass_api_timeout) |>
+      osmdata::add_osm_feature (key = "highway") |>
+      osmdata::osmdata_sf (quiet = FALSE)
+  })
+  
+  if (class (opres) [1] != "try-error") {
+    result <- append (result, list (opres))
+    queue <- queue [-1]
+  } else {
+    message("splitting..")
+    message("queue length before splitting: ",length(queue))
+    bboxnew <- split_bbox (queue [[1]])
+    queue <- append (bboxnew, queue [-1])
+    message("queue length after splitting, removing problematic bbox, adding splits of problematic bbox: ",length(queue))
+    
+  }
+}
+
+rm(list = setdiff(ls(), c("result","output_path")))
+#save(result, file = "my_data_result.Rdata")
+
+result_final = list()
+for (i in 1:length(result)) {
+  print(i)
+  print(nrow(result[[i]]$osm_lines))
+  interim <- osmdata::osm_poly2line(result[[i]])
+  print(nrow(interim$osm_lines))
+  result_final[[i]] <- interim$osm_lines
+}
+rm(list = setdiff(ls(), c("result_final","output_path")))
+
+result_sf_with_dup <- dplyr::bind_rows(result_final)
+print(nrow(result_sf_with_dup))
+
+result_sf_without_dup <- result_sf_with_dup |> dplyr::distinct()
+print(nrow(result_sf_without_dup))
+
+#save(result_sf_without_dup, file = "my_data_result_sf_without_dup.RData")
+
+sfarrow::st_write_parquet(obj = result_sf_without_dup, dsn = output_path)
+#hi <- sfarrow::st_read_parquet("./my_data_result_sf_without_dup_parquet.parquet")
 
 #################################################################
 # save for this step
 
-save(
-  sf_bb,
-  sf_bb_to_sf,
-  sf_bb_to_osmdata_bb,
-  streetnet_query_date,
-  streetnet_sf.lonlat,
-  file = output_path
-)
+# save(
+#   sf_bb,
+#   sf_bb_to_sf,
+#   sf_bb_to_osmdata_bb,
+#   streetnet_query_date,
+#   streetnet_sf.lonlat,
+#   file = output_path
+# )
 
 #################################################################
 # clean up workspace - remove any objs created during this step
 if(interactive()){
-  rm(list = setdiff(ls(),ws_objs))
+  rm(list = ls())
+  source("./local_default_config.R")
 }
   
 #################################################################
 
 
-# streetnet_ohsome_latest <- get_streetnet_sf_ohsome(boundary_map = sf_bb_to_sf)
-# save(
-#   streetnet_ohsome_latest,
-#   file = "./2025-refactor/chicago_streetnet_ohsome_latest.Rdata"
-# )
-
-# streetnet_dodgr_latest <- get_streetnet_sf_dodgr(osmdata_bb = sf_bb_to_osmdata_bb, expand = 0)
-# save(
-#   streetnet_dodgr_latest,
-#   file = "./2025-refactor/chicago_streetnet_dodgr_latest.Rdata"
-# )
-# 
-# streetnet_ohsome_latest_mini <- 
-#   process_streetnet_ohsome(streetnet_sf = streetnet_ohsome_latest) %>%
-#   select(osm_id,name,highway,geometry) %>%
-#   get_geom_type_col()
-# 
-# streetnet_dodgr_latest_mini <- 
-#   streetnet_dodgr_latest %>%
-#   select(osm_id,name,highway,geometry) %>%
-#   get_geom_type_col()
-# 
-# dodgr_ids <- streetnet_dodgr_latest_mini$osm_id
-# ohsome_ids <- streetnet_ohsome_latest_mini$osm_id
-#   
-# only_dodgr_ids <- setdiff(dodgr_ids,ohsome_ids)
-# only_ohsome_ids <- setdiff(ohsome_ids,dodgr_ids)
-# 
-# ohsome_only <-
-#   streetnet_ohsome_latest_mini %>% sf::st_drop_geometry() %>%
-#   anti_join(streetnet_dodgr_latest_mini %>% sf::st_drop_geometry(), by = join_by(osm_id))
-# 
-# dodgr_only <-
-#   streetnet_dodgr_latest_mini %>% sf::st_drop_geometry() %>%
-#   anti_join(streetnet_ohsome_latest_mini %>% sf::st_drop_geometry(), by = join_by(osm_id))
