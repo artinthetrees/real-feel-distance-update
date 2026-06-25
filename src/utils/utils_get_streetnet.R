@@ -1,6 +1,4 @@
 library(tidyverse)
-#library(dodgr)
-#library(ohsome)
 
 process_bbox_coords <- function(bbox_coords){
   # coords must be a vector in xmin, ymin, xmax, ymax order
@@ -60,7 +58,7 @@ bbox_coords_to_osmdata_bb <- function(bbox_coords){
   return(a)
 }
 
-get_streetnet_sf_dodgr <- function(osmdata_bb=NULL, city_string=NULL, state_string=NULL, expand=0.05, outpath=NULL){
+get_streetnet_sf_dodgr <- function(osmdata_bb=NULL, city_string=NULL, state_string=NULL, sc=FALSE, expand=0.05, outpath=NULL){
   
   if (is.null(osmdata_bb)){
     if (is.null(city_string) | is.null(state_string)){
@@ -77,7 +75,12 @@ get_streetnet_sf_dodgr <- function(osmdata_bb=NULL, city_string=NULL, state_stri
   
   print(osmdata_bb)
   
-  streetnet_sf <- dodgr::dodgr_streetnet(bbox = osmdata_bb, expand = expand, quiet = FALSE)
+  if (sc){
+    streetnet_sf <- dodgr::dodgr_streetnet_sc(bbox = osmdata_bb, expand = expand, quiet = FALSE)
+  } else {
+    streetnet_sf <- dodgr::dodgr_streetnet(bbox = osmdata_bb, expand = expand, quiet = FALSE)
+  }
+  
   return(streetnet_sf)
   
   
@@ -161,7 +164,34 @@ get_streetnet_weighted_graph_and_vertices <- function(streetnet_sf,wt_profile="f
   
 }
   
+# https://docs.ropensci.org/osmdata/articles/query-split.html
+# splitting a bounding box into a list of four equal-sized bounding boxes in a 2-by-2 grid, each box having a specified degree of overlap (eps=0.05, or 5%) with the neighbouring box.
 
+split_bbox <- function (bbox, grid = 2, eps = 0.05) {
+  xmin <- bbox ["x", "min"]
+  ymin <- bbox ["y", "min"]
+  dx <- (bbox ["x", "max"] - bbox ["x", "min"]) / grid
+  dy <- (bbox ["y", "max"] - bbox ["y", "min"]) / grid
+  
+  bboxl <- list ()
+  
+  for (i in 1:grid) {
+    for (j in 1:grid) {
+      b <- matrix (c (
+        xmin + ((i - 1 - eps) * dx),
+        ymin + ((j - 1 - eps) * dy),
+        xmin + ((i + eps) * dx),
+        ymin + ((j + eps) * dy)
+      ),
+      nrow = 2,
+      dimnames = dimnames (bbox)
+      )
+      
+      bboxl <- append (bboxl, list (b))
+    }
+  }
+  bboxl
+}
 
 
 
