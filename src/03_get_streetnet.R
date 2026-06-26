@@ -20,6 +20,7 @@ if(!interactive()){
     census_api_key <- commandArgs(trailingOnly=TRUE)[[7]]
     streetnet_datetime <- commandArgs(trailingOnly=TRUE)[[8]]
     osm_overpass_api_timeout <- as.numeric(commandArgs(trailingOnly=TRUE)[[9]])
+    osm_overpass_api_endpoint <- commandArgs(trailingOnly=TRUE)[[10]]
     message("city is: ", city_string)
     message("county is: ", county_string)
     message("state is: ", state_string)
@@ -29,6 +30,7 @@ if(!interactive()){
     message("census api key is: ", census_api_key)
     message("streetnet datetime: ", streetnet_datetime)
     message("osm overpass api timeout: ", osm_overpass_api_timeout)
+    message("osm overpass api endpoint: ", osm_overpass_api_endpoint)
 }
 
 #################################################################
@@ -40,8 +42,11 @@ message("city year output file name is: ", city_year_output_fname)
 city_output_fname <- get_city_output_filename(city_string=city_string,save_file_type="Rdata")
 message("city output file name is: ", city_output_fname)
 
-city_output_fname_parquet <- get_city_output_filename(city_string=city_string,save_file_type="parquet")
-message("city output file name parquet is: ", city_output_fname_parquet)
+city_output_fname_base <- get_city_output_filename(city_string=city_string,save_file_type=NULL)
+message("city output file name base is: ", city_output_fname_base)
+
+city_year_output_fname_base <- get_city_year_output_filename(city_string=city_string,year_num=year_num,save_file_type=NULL)
+message("city year output file name base is: ", city_year_output_fname_base)
 
 #################################################################
 # source utils specific to this script
@@ -50,7 +55,11 @@ source("./src/utils/utils_get_streetnet.R")
 #################################################################
 # create output file path specific to this script
 
-output_path <- Gmisc::pathJoin(output_dir,"street_network",city_output_fname_parquet)
+city_year_fname_streetnet <- paste0(city_year_output_fname_base,"_streetnet.parquet")
+output_path_streetnet <- Gmisc::pathJoin(output_dir,"street_network",city_year_fname_streetnet)
+print(output_path_streetnet)
+
+output_path <- Gmisc::pathJoin(output_dir,"street_network",city_year_output_fname)
 print(output_path)
 
 #################################################################
@@ -89,7 +98,7 @@ sf_bb_to_osmdata_bb <- bbox_coords_to_osmdata_bb(bbox_coords = sf_bb)
 ###############################################
 
 api_endpoint <- osmdata::get_overpass_url()
-osmdata::set_overpass_url("https://overpass-api.de/api/interpreter")
+osmdata::set_overpass_url(osm_overpass_api_endpoint)
 api_endpoint <- osmdata::get_overpass_url()
 
 ###############################################
@@ -123,7 +132,7 @@ while (length (queue) > 0) {
   }
 }
 
-rm(list = setdiff(ls(), c("result","output_path")))
+rm(list = setdiff(ls(), c("result","output_path","output_path_streetnet")))
 #save(result, file = "my_data_result.Rdata")
 
 result_final = list()
@@ -134,7 +143,7 @@ for (i in 1:length(result)) {
   print(nrow(interim$osm_lines))
   result_final[[i]] <- interim$osm_lines
 }
-rm(list = setdiff(ls(), c("result_final","output_path")))
+rm(list = setdiff(ls(), c("result_final","output_path","output_path_streetnet")))
 
 result_sf_with_dup <- dplyr::bind_rows(result_final)
 print(nrow(result_sf_with_dup))
@@ -144,8 +153,26 @@ print(nrow(result_sf_without_dup))
 
 #save(result_sf_without_dup, file = "my_data_result_sf_without_dup.RData")
 
-sfarrow::st_write_parquet(obj = result_sf_without_dup, dsn = output_path)
+################################################################################
+# save 1 for this step as parquet
+sfarrow::st_write_parquet(obj = result_sf_without_dup, dsn = output_path_streetnet)
 #hi <- sfarrow::st_read_parquet("./my_data_result_sf_without_dup_parquet.parquet")
+
+#################################################################
+# additional work
+rm(list = setdiff(ls(), c("result_sf_without_dup","output_path")))
+streetnet_weighted <- dodgr::weight_streetnet(result_sf_without_dup, wt_profile = "foot")
+
+streetnet_vertices <- dodgr::dodgr_vertices (streetnet_weighted)
+
+#################################################################
+# save 2 for this step as Rdata
+
+save(
+  streetnet_weighted,
+  streetnet_vertices,
+  file = output_path
+)
 
 #################################################################
 # save for this step
