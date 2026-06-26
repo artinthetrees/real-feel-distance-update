@@ -36,6 +36,12 @@ message("city year output file name is: ", city_year_output_fname)
 city_output_fname <- get_city_output_filename(city_string=city_string,save_file_type="Rdata")
 message("city output file name is: ", city_output_fname)
 
+city_output_fname_base <- get_city_output_filename(city_string=city_string,save_file_type=NULL)
+message("city output file name base is: ", city_output_fname_base)
+
+city_year_output_fname_base <- get_city_year_output_filename(city_string=city_string,year_num=year_num,save_file_type=NULL)
+message("city year output file name base is: ", city_year_output_fname_base)
+
 #################################################################
 # source utils specific to this script
 
@@ -48,21 +54,24 @@ print(output_path)
 #################################################################
 # pull in objs needed from previous parts of pipeline for this step
 
-streetnet_sf.lonlat <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"street_network",city_year_output_fname),obj_name = streetnet_sf.lonlat)
+city_year_fname_streetnet <- paste0(city_year_output_fname_base,"_streetnet.parquet")
+
+#streetnet_sf.lonlat <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"street_network",city_output_fname),obj_name = streetnet_sf.lonlat)
+streetnet_sf.lonlat <- sfarrow::st_read_parquet(Gmisc::pathJoin(output_dir,"street_network",city_year_fname_streetnet))
 
 #################################################################
 # work for this step
 
-graph <- dodgr::weight_streetnet (streetnet_sf.lonlat, wt_profile = "foot")
+streetnet_weighted <- dodgr::weight_streetnet (streetnet_sf.lonlat, wt_profile = "foot")
 
-v <- dodgr::dodgr_vertices (graph)
+streetnet_vertices <- dodgr::dodgr_vertices (streetnet_weighted)
 
 #################################################################
 # save for this step
 
 save(
-  graph,
-  v,
+  streetnet_weighted,
+  streetnet_vertices,
   file = output_path
 )
 
@@ -75,38 +84,3 @@ if(interactive()){
 #################################################################
 
 
-# streetnet_ohsome_latest <- get_streetnet_sf_ohsome(boundary_map = sf_bb_to_sf)
-# save(
-#   streetnet_ohsome_latest,
-#   file = "./2025-refactor/chicago_streetnet_ohsome_latest.Rdata"
-# )
-
-# streetnet_dodgr_latest <- get_streetnet_sf_dodgr(osmdata_bb = sf_bb_to_osmdata_bb, expand = 0)
-# save(
-#   streetnet_dodgr_latest,
-#   file = "./2025-refactor/chicago_streetnet_dodgr_latest.Rdata"
-# )
-# 
-# streetnet_ohsome_latest_mini <- 
-#   process_streetnet_ohsome(streetnet_sf = streetnet_ohsome_latest) %>%
-#   select(osm_id,name,highway,geometry) %>%
-#   get_geom_type_col()
-# 
-# streetnet_dodgr_latest_mini <- 
-#   streetnet_dodgr_latest %>%
-#   select(osm_id,name,highway,geometry) %>%
-#   get_geom_type_col()
-# 
-# dodgr_ids <- streetnet_dodgr_latest_mini$osm_id
-# ohsome_ids <- streetnet_ohsome_latest_mini$osm_id
-#   
-# only_dodgr_ids <- setdiff(dodgr_ids,ohsome_ids)
-# only_ohsome_ids <- setdiff(ohsome_ids,dodgr_ids)
-# 
-# ohsome_only <-
-#   streetnet_ohsome_latest_mini %>% sf::st_drop_geometry() %>%
-#   anti_join(streetnet_dodgr_latest_mini %>% sf::st_drop_geometry(), by = join_by(osm_id))
-# 
-# dodgr_only <-
-#   streetnet_dodgr_latest_mini %>% sf::st_drop_geometry() %>%
-#   anti_join(streetnet_ohsome_latest_mini %>% sf::st_drop_geometry(), by = join_by(osm_id))
