@@ -1,3 +1,4 @@
+# https://www.appsilon.com/post/r-doparallel
 #################################################################
 # list all objs in workspace at start
 
@@ -36,10 +37,19 @@ message("city year output file name is: ", city_year_output_fname)
 city_output_fname <- get_city_output_filename(city_string=city_string,save_file_type="Rdata")
 message("city output file name is: ", city_output_fname)
 
+city_output_fname_base <- get_city_output_filename(city_string=city_string,save_file_type=NULL)
+message("city output file name base is: ", city_output_fname_base)
+
+city_year_output_fname_base <- get_city_year_output_filename(city_string=city_string,year_num=year_num,save_file_type=NULL)
+message("city year output file name base is: ", city_year_output_fname_base)
+
 #################################################################
 # source utils specific to this script
-source("./src/utils/utils_get_streetnet.R")
+#source("./src/utils/utils_get_streetnet.R")
 source("./src/utils/utils_get_distance.R")
+
+library(foreach)
+library(doParallel)
 
 #################################################################
 # create output file path specific to this script
@@ -61,63 +71,80 @@ print(crs_utm)
 crs_lonlat <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"crs",city_year_output_fname),obj_name = crs_lonlat)
 print(crs_lonlat)
 
-# streetnet_vertices <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"intermediate","street_network_products",city_output_fname),obj_name = v)
-# streetnet_graph <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"intermediate","street_network_products",city_output_fname),obj_name = graph)
+streetnet_vertices <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"street_network_products",city_year_output_fname),obj_name = streetnet_vertices)
+streetnet_graph <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"street_network_products",city_year_output_fname),obj_name = streetnet_weighted)
 
 grocery.utm <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"grocery",city_year_output_fname),obj_name = grocery.sf.utm)
 tracts.within.city.utm <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(output_dir,"boundary_maps",city_year_output_fname),obj_name = tracts.within.city.utm)
-
-print(names(sf::st_geometry(tracts.within.city.utm)))
+sf::st_geometry(tracts.within.city.utm) <- "geometry"
+#print(names(sf::st_geometry(tracts.within.city.utm)))
 
 # to test/debug just use the first n tracts
 tracts.within.city.utm <- tracts.within.city.utm[1:5, ]
+sf::st_geometry(tracts.within.city.utm) <- "geometry"
 
-print("tracts: ")
-print(names(tracts.within.city.utm))
-print(names(sf::st_geometry(tracts.within.city.utm)))
+#print("tracts: ")
+#print(names(tracts.within.city.utm))
+#print(names(sf::st_geometry(tracts.within.city.utm)))
 
 #################################################################
 # work for this step
 
-distances_df_list <- list()
-summary_distances_df_list <- list()
+# Keep track of the start time
+time_start <- Sys.time()
 
-for (i in 1:nrow(tracts.within.city.utm)){
+# Detect how many physical/logical cores your computer has
+cores <- parallel::detectCores()
+
+# Create a cluster using all but one core
+cl <- makeCluster(cores - 1)
+
+# Register the cluster as the parallel backend
+registerDoParallel(cl)
+
+# Only for measuring computation time
+time_start_processing <- Sys.time()
+
+#distances_df_list <- list()
+#summary_distances_df_list <- list()
+
+combined_results <- foreach (i = 1:nrow(tracts.within.city.utm),.packages = c("sf")) %dopar% {
   one_tract.utm <- tracts.within.city.utm[i,]
-  print("one tract: ")
-  print(names(one_tract.utm))
-  print(names(sf::st_geometry(one_tract.utm)))
+  sf::st_geometry(one_tract.utm) <- "geometry"
+  #print("one tract: ")
+  #print(names(one_tract.utm))
+  #print(names(sf::st_geometry(one_tract.utm)))
   
   tract_id <- i
   print(tract_id)
 
   print("hi 0")
-  ################################### get streetnet, graph,and vertices for this tract plus 2km buffer
-  ### get 2km buffer boundary
-  one_tract.2km.buffer.utm <- sf::st_buffer(one_tract.utm, dist = 2000)
-  ###
-  print("hi 1")
-  ### get bbox params appropriately formatted for dodgr_streetnet fx
-  boundary.utm <- one_tract.2km.buffer.utm
-  print("hi 2")
-  boundary.lonlat <- boundary.utm %>% sf::st_transform(crs=crs_lonlat)
-  print("hi 3")
-  # create bounding box vector of coordinates from boundary lonlat sf - named vector in xmin, ymin, xmax, ymax order
-  sf_bb <- sf::st_bbox(boundary.lonlat)
-  print("hi 4")
-  # convert bounding box vector of coordinates to osmdata bounding box matrix format >> input to dodgr streetnet fx
-  sf_bb_to_osmdata_bb <- bbox_coords_to_osmdata_bb(bbox_coords = sf_bb)
-  print("hi 5")
-  ###
+  # ################################### get streetnet, graph,and vertices for this tract plus 2km buffer
+  # ### get 2km buffer boundary
+  # one_tract.2km.buffer.utm <- sf::st_buffer(one_tract.utm, dist = 2000)
+  # ###
+  # print("hi 1")
+  # ### get bbox params appropriately formatted for dodgr_streetnet fx
+  # boundary.utm <- one_tract.2km.buffer.utm
+  # print("hi 2")
+  # boundary.lonlat <- boundary.utm %>% sf::st_transform(crs=crs_lonlat)
+  # print("hi 3")
+  # # create bounding box vector of coordinates from boundary lonlat sf - named vector in xmin, ymin, xmax, ymax order
+  # sf_bb <- sf::st_bbox(boundary.lonlat)
+  # print("hi 4")
+  # # convert bounding box vector of coordinates to osmdata bounding box matrix format >> input to dodgr streetnet fx
+  # sf_bb_to_osmdata_bb <- bbox_coords_to_osmdata_bb(bbox_coords = sf_bb)
+  # print("hi 5")
+  # ###
 
-  ### get dodgr streetnet, graph, and vertices objects
-  streetnet_query_date <- Sys.Date()
+  # ### get dodgr streetnet, graph, and vertices objects
+  # streetnet_query_date <- Sys.Date()
   
-  streetnet_sf.lonlat <- get_streetnet_sf_dodgr(osmdata_bb = sf_bb_to_osmdata_bb, expand = 0)
-  streetnet_graph <- dodgr::weight_streetnet (streetnet_sf.lonlat, wt_profile = "foot")
-  streetnet_vertices <- dodgr::dodgr_vertices (streetnet_graph)
-  ###
-  ###################################
+  # streetnet_sf.lonlat <- get_streetnet_sf_dodgr(osmdata_bb = sf_bb_to_osmdata_bb, expand = 0)
+  # streetnet_graph <- dodgr::weight_streetnet (streetnet_sf.lonlat, wt_profile = "foot")
+  # streetnet_vertices <- dodgr::dodgr_vertices (streetnet_graph)
+  # ###
+  # ###################################
 
 
   my_distances <- 
@@ -178,25 +205,44 @@ for (i in 1:nrow(tracts.within.city.utm)){
   }
   
   
-  distances_df_list[[i]] <- distances_df
-  summary_distances_df_list[[i]] <- summary_distances_df
+  # distances_df_list[[i]] <- distances_df
+  # summary_distances_df_list[[i]] <- summary_distances_df
+  
+  # Return them together as a named list
+  list(distances_df = distances_df, summary_distances_df = summary_distances_df)
   
   
 }
 
+# Only for measuring computation time
+time_finish_processing <- Sys.time()
+
+stopCluster(cl)
+
+# Keep track of the end time
+time_end <- Sys.time()
+
+total_time = difftime(time_end, time_start, units = "secs")
+compute_time = difftime(time_finish_processing, time_start_processing, units = "secs")
+
+run_date <- Sys.date()
+
+# Separate into two clean lists
+distances_df_list <- lapply(combined_results, `[[`, "distances_df")
+summary_distances_df_list <- lapply(combined_results, `[[`, "summary_distances_df")
 
 summary_distances_df <- 
   data.table::rbindlist(summary_distances_df_list, 
                         use.names = TRUE,
                         fill = TRUE)
 
-
-
-
 #################################################################
 # save for this step
 
 save(
+  run_date, 
+  total_time,
+  compute_time,
   summary_distances_df,
   distances_df_list,
   file = output_path
@@ -205,7 +251,9 @@ save(
 #################################################################
 # clean up workspace - remove any objs created during this step
 
-rm(list = setdiff(ls(),ws_objs))
+if(interactive()){
+  rm(list = ls())
+}
 
 #################################################################
 
