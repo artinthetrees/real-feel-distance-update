@@ -59,8 +59,8 @@ city_year_fname_streetnet <- paste0(city_year_output_fname_base,"_streetnet.parq
 output_path_streetnet <- Gmisc::pathJoin(output_dir,"street_network",city_year_fname_streetnet)
 print(output_path_streetnet)
 
-output_path <- Gmisc::pathJoin(output_dir,"street_network",city_year_output_fname)
-print(output_path)
+# output_path <- Gmisc::pathJoin(output_dir,"street_network",city_year_output_fname)
+# print(output_path)
 
 #################################################################
 # pull in objs needed from previous parts of pipeline for this step
@@ -158,21 +158,21 @@ print(nrow(result_sf_without_dup))
 sfarrow::st_write_parquet(obj = result_sf_without_dup, dsn = output_path_streetnet)
 #hi <- sfarrow::st_read_parquet("./my_data_result_sf_without_dup_parquet.parquet")
 
-#################################################################
-# additional work
-rm(list = setdiff(ls(), c("result_sf_without_dup","output_path")))
-streetnet_weighted <- dodgr::weight_streetnet(result_sf_without_dup, wt_profile = "foot")
+# #################################################################
+# # additional work
+# rm(list = setdiff(ls(), c("result_sf_without_dup","output_path")))
+# streetnet_weighted <- dodgr::weight_streetnet(result_sf_without_dup, wt_profile = "foot")
 
-streetnet_vertices <- dodgr::dodgr_vertices (streetnet_weighted)
+# streetnet_vertices <- dodgr::dodgr_vertices (streetnet_weighted)
 
-#################################################################
-# save 2 for this step as Rdata
+# #################################################################
+# # save 2 for this step as Rdata
 
-save(
-  streetnet_weighted,
-  streetnet_vertices,
-  file = output_path
-)
+# save(
+#   streetnet_weighted,
+#   streetnet_vertices,
+#   file = output_path
+# )
 
 #################################################################
 # save for this step
