@@ -10,17 +10,23 @@ include .env
 
 .PHONY: all boundary boundaryplots grocery configtest
 
-all: configtest crs boundary_maps boundary_map_plots grocery streetnet
+all: configtest crs boundary_maps boundary_map_plots grocery streetnet streetnet_products
 
-streetnet: $(OUTPUT_DIR)/street_network/$(CITY_YEAR_OUTPUT_STREETNET_PARQUET) $(OUTPUT_DIR)/street_network/$(CITY_YEAR_OUTPUT_FILENAME)
+streetnet_products: $(OUTPUT_DIR)/street_network_products/$(CITY_YEAR_OUTPUT_FILENAME)
+streetnet: $(OUTPUT_DIR)/street_network/$(CITY_YEAR_OUTPUT_STREETNET_PARQUET) 
 #distance_to_grocery: $(OUTPUT_DIR)/distance_to_grocery/$(CITY_YEAR_OUTPUT_FILENAME)
 grocery: $(OUTPUT_DIR)/grocery/$(CITY_YEAR_OUTPUT_FILENAME)
 boundary_map_plots: $(OUTPUT_DIR)/boundary_map_plots/$(CITY_YEAR_OUTPUT_FILENAME)
 boundary_maps: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
 crs: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
 
+# 03b get streetnet products
+$(OUTPUT_DIR)/street_network_products/$(CITY_YEAR_OUTPUT_FILENAME): src/03b_get_streetnet_products.R src/utils/utils.R $(OUTPUT_DIR)/street_network/$(CITY_YEAR_OUTPUT_STREETNET_PARQUET) 
+	mkdir -p $(OUTPUT_DIR)/street_network_products
+	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY) 
+
 # 03 get streetnet
-$(OUTPUT_DIR)/street_network/$(CITY_YEAR_OUTPUT_STREETNET_PARQUET) $(OUTPUT_DIR)/street_network/$(CITY_YEAR_OUTPUT_FILENAME): src/03_get_streetnet.R src/utils/utils_get_streetnet.R src/utils/utils.R $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME) 
+$(OUTPUT_DIR)/street_network/$(CITY_YEAR_OUTPUT_STREETNET_PARQUET): src/03_get_streetnet.R src/utils/utils_get_streetnet.R src/utils/utils.R $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME) 
 	mkdir -p $(OUTPUT_DIR)/street_network
 	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY) $(STREETNET_DATETIME) $(OSM_OVERPASS_API_TIMEOUT) $(OSM_OVERPASS_API_ENDPOINT)
 # 	mkdir -p $(OUTPUT_DIR)/street_network/street_network_created
