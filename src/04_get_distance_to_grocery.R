@@ -37,19 +37,10 @@ message("city year output file name is: ", city_year_output_fname)
 city_output_fname <- get_city_output_filename(city_string=city_string,save_file_type="Rdata")
 message("city output file name is: ", city_output_fname)
 
-city_output_fname_base <- get_city_output_filename(city_string=city_string,save_file_type=NULL)
-message("city output file name base is: ", city_output_fname_base)
-
-city_year_output_fname_base <- get_city_year_output_filename(city_string=city_string,year_num=year_num,save_file_type=NULL)
-message("city year output file name base is: ", city_year_output_fname_base)
-
 #################################################################
 # source utils specific to this script
 #source("./src/utils/utils_get_streetnet.R")
 source("./src/utils/utils_get_distance.R")
-
-library(foreach)
-library(doParallel)
 
 #################################################################
 # create output file path specific to this script
@@ -79,41 +70,25 @@ tracts.within.city.utm <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(o
 sf::st_geometry(tracts.within.city.utm) <- "geometry"
 #print(names(sf::st_geometry(tracts.within.city.utm)))
 
-# to test/debug just use the first n tracts
-tracts.within.city.utm <- tracts.within.city.utm[1:5, ]
-sf::st_geometry(tracts.within.city.utm) <- "geometry"
+# # to test/debug just use the first n tracts
+# tracts.within.city.utm <- tracts.within.city.utm[1:5, ]
 
-#print("tracts: ")
-#print(names(tracts.within.city.utm))
+print("tracts: ")
+print(names(tracts.within.city.utm))
 #print(names(sf::st_geometry(tracts.within.city.utm)))
 
 #################################################################
 # work for this step
 
-# Keep track of the start time
-time_start <- Sys.time()
+distances_df_list <- list()
+summary_distances_df_list <- list()
 
-# Detect how many physical/logical cores your computer has
-cores <- parallel::detectCores()
-
-# Create a cluster using all but one core
-cl <- makeCluster(cores - 1)
-
-# Register the cluster as the parallel backend
-registerDoParallel(cl)
-
-# Only for measuring computation time
-time_start_processing <- Sys.time()
-
-#distances_df_list <- list()
-#summary_distances_df_list <- list()
-
-combined_results <- foreach (i = 1:nrow(tracts.within.city.utm),.packages = c("sf")) %dopar% {
+for (i in 1:nrow(tracts.within.city.utm)){
   one_tract.utm <- tracts.within.city.utm[i,]
   sf::st_geometry(one_tract.utm) <- "geometry"
-  #print("one tract: ")
-  #print(names(one_tract.utm))
-  #print(names(sf::st_geometry(one_tract.utm)))
+  # print("one tract: ")
+  # print(names(one_tract.utm))
+  # print(names(sf::st_geometry(one_tract.utm)))
   
   tract_id <- i
   print(tract_id)
@@ -205,44 +180,25 @@ combined_results <- foreach (i = 1:nrow(tracts.within.city.utm),.packages = c("s
   }
   
   
-  # distances_df_list[[i]] <- distances_df
-  # summary_distances_df_list[[i]] <- summary_distances_df
-  
-  # Return them together as a named list
-  list(distances_df = distances_df, summary_distances_df = summary_distances_df)
+  distances_df_list[[i]] <- distances_df
+  summary_distances_df_list[[i]] <- summary_distances_df
   
   
 }
 
-# Only for measuring computation time
-time_finish_processing <- Sys.time()
-
-stopCluster(cl)
-
-# Keep track of the end time
-time_end <- Sys.time()
-
-total_time = difftime(time_end, time_start, units = "secs")
-compute_time = difftime(time_finish_processing, time_start_processing, units = "secs")
-
-run_date <- Sys.date()
-
-# Separate into two clean lists
-distances_df_list <- lapply(combined_results, `[[`, "distances_df")
-summary_distances_df_list <- lapply(combined_results, `[[`, "summary_distances_df")
 
 summary_distances_df <- 
   data.table::rbindlist(summary_distances_df_list, 
                         use.names = TRUE,
                         fill = TRUE)
 
+
+
+
 #################################################################
 # save for this step
 
 save(
-  run_date, 
-  total_time,
-  compute_time,
   summary_distances_df,
   distances_df_list,
   file = output_path
@@ -250,10 +206,11 @@ save(
 
 #################################################################
 # clean up workspace - remove any objs created during this step
+if (interactive()){
+  rm(list = setdiff(ls(),ws_objs))
 
-if(interactive()){
-  rm(list = ls())
 }
+
 
 #################################################################
 
