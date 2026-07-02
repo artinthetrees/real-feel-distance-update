@@ -7,7 +7,9 @@ YEAR:=  2020
 
 ###########################################
 STREETNET_DATETIME:= 2026-06-16T00:00:00Z
+#STREETNET_DATETIME:= $(YEAR)-06-15T00:00:00Z
 OSM_OVERPASS_API_TIMEOUT:= 60
+OSM_OVERPASS_API_ENDPOINT:= https://overpass-api.de/api/interpreter
 ###########################################
 
 ###########################################
@@ -36,7 +38,9 @@ $(info    county_file_safe is $(COUNTY_FILE_SAFE))
 CITY_YEAR_OUTPUT_FILENAME:= $(CITY_FILE_SAFE)_$(YEAR).$(OUTPUT_FILE_EXT)
 CITY_OUTPUT_FILENAME:= $(CITY_FILE_SAFE).$(OUTPUT_FILE_EXT)
 
-CITY_YEAR_OUTPUT_FILENAME_PARQUET:= $(CITY_FILE_SAFE)_$(YEAR).parquet
-CITY_OUTPUT_FILENAME_PARQUET:= $(CITY_FILE_SAFE).parquet
+# CITY_YEAR_OUTPUT_FILENAME_PARQUET:= $(CITY_FILE_SAFE)_$(YEAR).parquet
+# CITY_OUTPUT_FILENAME_PARQUET:= $(CITY_FILE_SAFE).parquet
+
+CITY_YEAR_OUTPUT_STREETNET_PARQUET:= $(CITY_FILE_SAFE)_$(YEAR)_streetnet.parquet
 
 
