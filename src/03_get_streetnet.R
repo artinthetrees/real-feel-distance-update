@@ -132,7 +132,7 @@ while (length (queue) > 0) {
   }
 }
 
-rm(list = setdiff(ls(), c("result","output_path","output_path_streetnet")))
+rm(list = setdiff(ls(), c("result","output_path_streetnet")))
 #save(result, file = "my_data_result.Rdata")
 
 result_final = list()
@@ -143,7 +143,7 @@ for (i in 1:length(result)) {
   print(nrow(interim$osm_lines))
   result_final[[i]] <- interim$osm_lines
 }
-rm(list = setdiff(ls(), c("result_final","output_path","output_path_streetnet")))
+rm(list = setdiff(ls(), c("result_final","output_path_streetnet")))
 
 result_sf_with_dup <- dplyr::bind_rows(result_final)
 print(nrow(result_sf_with_dup))
