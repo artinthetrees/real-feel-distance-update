@@ -8,9 +8,9 @@ include $(CONFIG_FILE)
 include vars.mk
 include .env
 
-.PHONY: all raw_prism boundary_maps boundary_map_plots processed_prism grocery streetnet streetnet_products distance_to_grocery check-missing check-names configtest
+.PHONY: all raw_prism acs boundary_maps boundary_map_plots processed_prism grocery streetnet streetnet_products distance_to_grocery check-missing check-names configtest
 
-all: configtest raw_prism crs boundary_maps boundary_map_plots processed_prism grocery streetnet streetnet_products distance_to_grocery
+all: configtest raw_prism acs crs boundary_maps boundary_map_plots processed_prism grocery streetnet streetnet_products distance_to_grocery
 
 distance_to_grocery: $(OUTPUT_DIR)/distance_to_grocery/$(CITY_YEAR_OUTPUT_FILENAME)
 streetnet_products: $(OUTPUT_DIR)/street_network_products/$(CITY_YEAR_OUTPUT_FILENAME)
@@ -20,6 +20,7 @@ processed_prism: $(ALL_PROCESSED_PRISM_FILE_PATHS)
 boundary_map_plots: $(OUTPUT_DIR)/boundary_map_plots/$(CITY_YEAR_OUTPUT_FILENAME)
 boundary_maps: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
 crs: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
+acs: $(OUTPUT_DIR)/acs_data/$(YEAR_OUTPUT_ACS_CODEBOOK_PARQUET) $(OUTPUT_DIR)/acs_data/$(STATE_YEAR_OUTPUT_ACS_PARQUET) $(OUTPUT_DIR)/acs_data/$(STATE_YEAR_OUTPUT_ACS_ESTIMATES_PARQUET)
 raw_prism: $(ALL_RAW_PRISM_FILE_PATHS)
 
 
@@ -68,6 +69,11 @@ $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME): src/01_get_crs.R src/utils/utils
 	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY)
 # 	mkdir -p $(OUTPUT_DIR)/crs/crs_created
 # 	touch -a $(OUTPUT_DIR)/crs/crs_created/$(CITY_FILE_SAFE)_crs_created.txt
+
+# 01 get acs data - no file dependencies
+$(OUTPUT_DIR)/acs_data/$(YEAR_OUTPUT_ACS_CODEBOOK_PARQUET) $(OUTPUT_DIR)/acs_data/$(STATE_YEAR_OUTPUT_ACS_PARQUET) $(OUTPUT_DIR)/acs_data/$(STATE_YEAR_OUTPUT_ACS_ESTIMATES_PARQUET): src/01_get_acs_data.R src/utils/utils.R 
+	mkdir -p $(OUTPUT_DIR)/acs_data/$(STATE)_$(YEAR)
+	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(OUTPUT_DIR) $(CENSUS_API_KEY)
 
 # 01 get raw prism data, only if prism vars is a non-empty list - no file dependencies
 ifneq ($(PRISM_VARS),)
