@@ -50,6 +50,10 @@ CITY_OUTPUT_FILENAME:= $(CITY_FILE_SAFE).$(OUTPUT_FILE_EXT)
 
 CITY_YEAR_OUTPUT_STREETNET_PARQUET:= $(CITY_FILE_SAFE)_$(YEAR)_streetnet.parquet
 
+YEAR_OUTPUT_ACS_CODEBOOK_PARQUET:= $(YEAR)_acs5_codebook.parquet
+STATE_YEAR_OUTPUT_ACS_PARQUET:= $(STATE)_$(YEAR)/$(STATE)_$(YEAR)_acs5.parquet
+STATE_YEAR_OUTPUT_ACS_ESTIMATES_PARQUET:= $(STATE)_$(YEAR)/$(STATE)_$(YEAR)_acs5_estimates.parquet
+
 
 ifneq ($(PRISM_VARS),)
 # Generates dates dynamically from jan 1 to dec 31 of the year specified
