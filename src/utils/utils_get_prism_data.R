@@ -80,6 +80,25 @@ get_prism_crs <- function(prism_file){
   return(prism_crs)
 }
 
+
+get_all_dates_in_year <- function(year) {
+  # 1. Create full date sequence
+  date_seq <- lubridate::seq(make_date(year, 1, 1), make_date(year, 12, 31), by = "day")
+  
+  # 2. Reformat to YYYYMMDD string format
+  return(format(date_seq, "%Y%m%d"))
+}
+
+get_prism_api_daily_data_url <- function(variable,date,resolution="800m",region="us"){
+  # resolution is one of 800m or 4km
+  # region is one of us, ak, hi, pr
+  # date is yyyymmdd
+
+  # Build the PRISM 800m web service URL 
+  url <- paste0("https://services.nacse.org/prism/data/get/",region,"/",resolution,"/", variable, "/", date)
+
+}
+
 get_prism_per_boundary <- function(prism_file_list,boundary_map,return_type="verbose",output_path=NULL){
   
   # convert boundary map to prism crs to ensure compatibility
