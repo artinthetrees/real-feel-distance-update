@@ -6,6 +6,13 @@ YEAR:=  2020
 ###########################################
 
 ###########################################
+PRISM_VARS:= tmax tdmean
+PRISM_DIR:= raw_prism_data
+#ALL_PRISM_FILE_TYPES:= bil bil.aux.xml hdr info.txt prj stx xml
+ALL_PRISM_FILE_TYPES:= bil 
+###########################################
+
+###########################################
 STREETNET_DATETIME:= 2026-06-16T00:00:00Z
 #STREETNET_DATETIME:= $(YEAR)-06-15T00:00:00Z
 OSM_OVERPASS_API_TIMEOUT:= 60
@@ -44,3 +51,31 @@ CITY_OUTPUT_FILENAME:= $(CITY_FILE_SAFE).$(OUTPUT_FILE_EXT)
 CITY_YEAR_OUTPUT_STREETNET_PARQUET:= $(CITY_FILE_SAFE)_$(YEAR)_streetnet.parquet
 
 
+ifneq ($(PRISM_VARS),)
+# Generates dates dynamically from jan 1 to dec 31 of the year specified
+ALL_DATES:= $(shell seq 1 366 | xargs -I {} date -d "$(YEAR)-01-01 + {} days - 1 day" "+%Y%m%d" 2>/dev/null | grep "^$(YEAR)")
+
+# Nested foreach
+ALL_RAW_PRISM_FILE_PATHS:= $(foreach prism_var,$(PRISM_VARS), \
+              $(foreach date,$(ALL_DATES), \
+			      $(foreach file_type,$(ALL_PRISM_FILE_TYPES), \
+                    $(PRISM_DIR)/prism_$(prism_var)_us_30s_$(date)/prism_$(prism_var)_us_30s_$(date).$(file_type) \
+				  ) \
+              ) \
+            )
+
+# Nested foreach
+ALL_PROCESSED_PRISM_FILE_PATHS:= $(foreach prism_var,$(PRISM_VARS),$(OUTPUT_DIR)/environmental_data/$(CITY_FILE_SAFE)_$(YEAR)/prism_$(prism_var)_$(CITY_YEAR_OUTPUT_FILENAME))				 
+              
+            
+
+$(info    prism_vars is $(PRISM_VARS))
+#$(info    all_raw_prism_file_paths is $(ALL_RAW_PRISM_FILE_PATHS))
+
+# Set N (e.g., print the first 3 items)
+N := 25
+# Prints the list elements to the console during execution
+$(info First $(N) items of all_raw_prism_file_paths: $(wordlist 1, $(N), $(ALL_RAW_PRISM_FILE_PATHS)))
+$(info all_processed_prism_file_paths: $(ALL_PROCESSED_PRISM_FILE_PATHS))
+$(info city year output filename: $(CITY_YEAR_OUTPUT_FILENAME))
+endif
