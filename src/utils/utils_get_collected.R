@@ -10,7 +10,7 @@ collect_environmental_data_var <- function(base_var,source_var,summary_distances
       message("base var ",base_var," not already collected, collecting..")
 
       source_var_parse <- stringr::str_split(source_var, "_", n = 2)[[1]]
-      source_var_source_string <- base_var_parse[[1]]
+      source_var_source_string <- source_var_parse[[1]]
 
       # pull in data for base var needed for calculated var
       source_var_fname <- Gmisc::pathJoin(output_dir,"environmental_data",city_year_output_fname_base,paste0(source_var,"_",city_year_output_fname_base,".Rdata"))
@@ -45,20 +45,20 @@ collect_environmental_data_var <- function(base_var,source_var,summary_distances
 
 }
 
-calculate_environmental_data_var_heatindex <- function(collect_df,temp_var="temp",dewpointtemp_var="dewpointtemp",temp_measured_in="celsius"){
+calculate_environmental_data_var_heatindex <- function(collect_df,temp_var="temp",dewpointtemp_var="dewpointtemp",temp_measured_in="celsius",...){
     collect_data_df <- 
     collect_data_df %>%
-    mutate(heatindex = weathermetrics::heat.index(t = {{temp_var}},
-                                                    dp = {{dewpointtemp_var}}, 
+    mutate(heatindex = weathermetrics::heat.index(t = .data[[temp_var]],
+                                                    dp = .data[[dewpointtemp_var]], 
                                                     temperature.metric = "celsius", 
                                                     output.metric = "celsius"),
-            temp_f = weathermetrics::celsius.to.fahrenheit({{temp_var}}, round = 2),
-            dewpointtemp_f = weathermetrics::celsius.to.fahrenheit({{dewpointtemp_var}}, round = 2),
+            temp_f = weathermetrics::celsius.to.fahrenheit(.data[[temp_var]], round = 2),
+            dewpointtemp_f = weathermetrics::celsius.to.fahrenheit(.data[[dewpointtemp_var]], round = 2),
             heatindex_f = weathermetrics::heat.index(t = temp_f,
                                                     dp = dewpointtemp_f, 
                                                     temperature.metric = "fahrenheit", 
                                                     output.metric = "fahrenheit"),
-            heatindex_invalid = ifelse({{temp_var}} < 27 | {{dewpointtemp_var}} < 12,1,0)
+            heatindex_invalid = ifelse(.data[[temp_var]] < 27 | .data[[dewpointtemp_var]] < 12,1,0)
             )
     
     return(collect_data_df)

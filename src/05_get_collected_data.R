@@ -94,47 +94,53 @@ summary_distances_df <- get_obj_from_rdata(rdata_file_path = Gmisc::pathJoin(out
 #################################################################
 # work for this step
 
+real_feel_vars_base <- Filter(nzchar, real_feel_vars_base)
+real_feel_vars_to_calculate <- Filter(nzchar, real_feel_vars_to_calculate)
+
 collect_data_df <- NULL
 
-# collect base environmental variables that are directly part of real feel calculation
+# collect base environmental variables that are directly part of real feel calculation and/or require for calculation of calculated environmental variables that are part of real feel calculation
 if (length(real_feel_vars_base)==0){
   message("there are 0 base environmental variables needed for real feel calculation, skipping collection of base environmental variables...")
 } else {
   message("there are ",length(real_feel_vars_base), " environmental variables needed for real feel calculation, starting collection of base environmental variables...")
-  capture_base_vars_list <- list()
-  capture_source_vars_list <- list()
+  #capture_base_vars_list <- list()
+  #capture_source_vars_list <- list()
 
   for (var_base_def in real_feel_vars_base){
-    if (var_base_def == ""){
-      message("base var is empty string, skipping collection process..")
-      next
-    }
-    message("working on ",var_base_def)
+    # if (var_base_def == ""){
+    #   message("base var is empty string, skipping collection process..")
+    #   next
+    # }
+    message("working on: ",var_base_def)
     split_base_var_from_source_var <- lapply(as.list(strsplit(var_base_def,"from")[[1]]),trimws)
 
     base_var <- split_base_var_from_source_var[[1]]
     source_var <- split_base_var_from_source_var[[2]]
+    
+    message("base var: ",base_var)
+    message("source var: ",source_var)
 
-    capture_base_vars_list[[length(capture_base_vars_list) + 1]] <- base_var
-    capture_source_vars_list[[length(capture_source_vars_list) + 1]] <- source_var
+    # capture_base_vars_list[[length(capture_base_vars_list) + 1]] <- base_var
+    # capture_source_vars_list[[length(capture_source_vars_list) + 1]] <- source_var
 
     collect_data_df <- collect_environmental_data_var(base_var,source_var,summary_distances_df,collect_data_df,year_string,output_dir,city_year_output_fname_base)
 
   }
 }
 
-# collect base environmental variables needed to calculate calculated environmental variables that are part of the real feel calculation
+# calculate any calculated environmental variables that are part of the real feel calculation - all base environmental variables on which these calculations rely should have already been collected in the previous step
 if (length(real_feel_vars_to_calculate)==0){
-  message("there are 0 calculated environmental variables needed for real feel calculation, skipping collection of base environmental variables needed for calculated environmental variable calculation...")
+  message("there are 0 calculated environmental variables needed for real feel calculation, skipping calculation of calculated environmental variables...")
 } else {
-  message("there are ",length(real_feel_vars_to_calculate), "calculated variables needed for real feel calculation, starting collection of base environmental variables needed for calculated environmental variables calculation...")
-  calc_vars_list <- list()
+  message("there are ",length(real_feel_vars_to_calculate), "calculated environmental variables needed for real feel calculation, starting calculation of calculated environmental variables...")
+  #calc_vars_list <- list()
 
   for (var_calc_def in real_feel_vars_to_calculate){
-    if (var_calc_def == ""){
-      message("calc var is empty string, skipping calculation process..")
-      next
-    }
+    # if (var_calc_def == ""){
+    #   message("calc var is empty string, skipping calculation process..")
+    #   next
+    # }
 
     message("working on ",var_calc_def)
     split_calc_var_from_base_vars <- lapply(as.list(strsplit(var_calc_def,"from")[[1]]),trimws)
@@ -142,21 +148,22 @@ if (length(real_feel_vars_to_calculate)==0){
     calc_var <- split_calc_var_from_base_vars[[1]]
     message("calc var: ", calc_var)
     
-    calc_vars_list[[length(calc_vars_list) + 1]] <- calc_var
+    # calc_vars_list[[length(calc_vars_list) + 1]] <- calc_var
     
     base_vars_raw <- split_calc_var_from_base_vars[[2]]
     base_vars <- lapply(as.list(strsplit(base_vars_raw,"\\s+")[[1]]),trimws)
     message("base vars: ", base_vars)
 
     # make sure all base vars required for calculation of calc var have already been collected
-    if !all(unlist(base_vars) %in% names(collect_df)){
+    if (!all(unlist(base_vars) %in% names(collect_data_df))){
       message("not all base vars required to calculate ",calc_var," are available: ")
       print(base_vars)
-      print(unlist(base_vars) %in% names(collect_df))
+      print(unlist(base_vars) %in% names(collect_data_df))
       message("skipping calculation..")
       next
     }
     
+    # make sure function required for calculation of calc var exists 
     my_calc_function_name <- paste0("calculate_environmental_data_var_",calc_var)
 
     my_calc_function <- tryCatch({
@@ -179,7 +186,7 @@ if (length(real_feel_vars_to_calculate)==0){
       temp_measured_in="celsius",
       dist_measured_in="meter"
       )
-  
+  }
 }
 
 collect_data_df <- 
