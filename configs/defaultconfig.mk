@@ -13,6 +13,33 @@ ALL_PRISM_FILE_TYPES:= bil
 ###########################################
 
 ###########################################
+# real feel base vars (REAL_FEEL_VARS_BASE) should always be specified as a comma delimited list of strings of the form: 
+#   {concept measure from data source} from {data source}_{data source variable used to measure concept}
+
+#   currently available values include:
+#     temp from prism_tmax
+#     dewpointtemp from prism_tdmean
+
+REAL_FEEL_VARS_BASE:= temp from prism_tmax, dewpointtemp from prism_tdmean, 
+
+# real feel calculated vars (REAL_FEEL_VARS_TO_CALCULATE) should always be specified as a comma delimited list of strings of the form: 
+#   {concept measure to be calculated} from {concept measure from data source 1} {concept measure from data source 2} ... {concept measure from data source n} 
+
+#   currently available values include:
+#     heatindex from temp dewpointtemp
+
+REAL_FEEL_VARS_TO_CALCULATE:= heatindex from temp dewpointtemp,
+
+# data source and concept measured strings should have no spaces or special characters (e.g. underscores)
+
+# by default temp data should always be in degrees Celsius, distance/area data should always be in meters 
+# concept measured strings should currently be one of: temp, dewpoint
+#REAL_FEEL_VARS_BASE:= prism_tmax prism_tdmean
+ 
+REAL_FEEL_MODEL_LABEL:= prism_heatindex
+###########################################
+
+###########################################
 STREETNET_DATETIME:= 2026-06-16T00:00:00Z
 #STREETNET_DATETIME:= $(YEAR)-06-15T00:00:00Z
 OSM_OVERPASS_API_TIMEOUT:= 60
