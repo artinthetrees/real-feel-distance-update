@@ -23,7 +23,7 @@ if(!interactive()){
     real_feel_model_label <- commandArgs(trailingOnly=TRUE)[[8]]
     
     #real_feel_vars_base <- as.list(strsplit(real_feel_vars_base_raw,"\\s+")[[1]])
-    real_feel_vars_base <- lapply(as.list(strsplit(real_feel_vars_base,",")[[1]]),trimws)
+    real_feel_vars_base <- lapply(as.list(strsplit(real_feel_vars_base_raw,",")[[1]]),trimws)
     real_feel_vars_to_calculate <- lapply(as.list(strsplit(real_feel_vars_to_calculate_raw,",")[[1]]),trimws)
     
   
