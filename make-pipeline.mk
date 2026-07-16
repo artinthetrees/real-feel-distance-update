@@ -8,10 +8,25 @@ include $(CONFIG_FILE)
 include vars.mk
 include .env
 
-.PHONY: all raw_prism acs boundary_maps boundary_map_plots processed_prism grocery streetnet streetnet_products distance_to_grocery check-missing check-names configtest
+.PHONY: all \
+        raw_prism \
+		acs \
+		crs \
+		boundary_maps \
+		boundary_map_plots \
+		processed_prism \
+		grocery \
+		streetnet \
+		streetnet_products\
+		distance_to_grocery\
+		collect_data \
+		check-missing \
+		check-names \
+		configtest
 
-all: configtest raw_prism acs crs boundary_maps boundary_map_plots processed_prism grocery streetnet streetnet_products distance_to_grocery
+all: configtest collect_data acs boundary_map_plots
 
+collect_data: $(OUTPUT_DIR)/collected_data/$(CITY_FILE_SAFE)_$(YEAR)/$(REAL_FEEL_MODEL_LABEL)_$(CITY_YEAR_OUTPUT_FILENAME)
 distance_to_grocery: $(OUTPUT_DIR)/distance_to_grocery/$(CITY_YEAR_OUTPUT_FILENAME)
 streetnet_products: $(OUTPUT_DIR)/street_network_products/$(CITY_YEAR_OUTPUT_FILENAME)
 streetnet: $(OUTPUT_DIR)/street_network/$(CITY_YEAR_OUTPUT_STREETNET_PARQUET) 
@@ -23,6 +38,11 @@ crs: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
 acs: $(OUTPUT_DIR)/acs_data/$(YEAR_OUTPUT_ACS_CODEBOOK_PARQUET) $(OUTPUT_DIR)/acs_data/$(STATE_YEAR_OUTPUT_ACS_PARQUET) $(OUTPUT_DIR)/acs_data/$(STATE_YEAR_OUTPUT_ACS_ESTIMATES_PARQUET)
 raw_prism: $(ALL_RAW_PRISM_FILE_PATHS)
 
+# 05 collect distance to grocery and base environmental data that are directly used in real feel calc or used to calculate calculated environmental data that are used in real feel calc 
+# file dependencies: distance to grocery, processed prism data (if/when other sources added this should be changed to all processed environmental data)
+$(OUTPUT_DIR)/collected_data/$(CITY_FILE_SAFE)_$(YEAR)/$(REAL_FEEL_MODEL_LABEL)_$(CITY_YEAR_OUTPUT_FILENAME): src/05_get_collected_data.R src/utils/utils_get_collected.R src/utils/utils.R $(OUTPUT_DIR)/distance_to_grocery/$(CITY_YEAR_OUTPUT_FILENAME) $(ALL_PROCESSED_PRISM_FILE_PATHS)
+	mkdir -p $(OUTPUT_DIR)/collected_data/$(CITY_FILE_SAFE)_$(YEAR)
+	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(OUTPUT_DIR) "$(REAL_FEEL_VARS_BASE)" "$(REAL_FEEL_VARS_TO_CALCULATE)" $(REAL_FEEL_MODEL_LABEL)
 
 # 04 get distance to grocery
 $(OUTPUT_DIR)/distance_to_grocery/$(CITY_YEAR_OUTPUT_FILENAME): src/04_get_distance_to_grocery.R src/utils/utils_get_distance.R src/utils/utils.R $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/grocery/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/street_network_products/$(CITY_YEAR_OUTPUT_FILENAME)
@@ -47,9 +67,13 @@ $(OUTPUT_DIR)/grocery/$(CITY_YEAR_OUTPUT_FILENAME): src/03_process_raw_grocery_d
 	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(CRS_DATUM) $(OUTPUT_DIR) $(CENSUS_API_KEY)
 
 # 03 get processed prism - file dependencies: crs, boundary maps, raw prism data
+ifneq ($(PRISM_VARS),)
+
 $(ALL_PROCESSED_PRISM_FILE_PATHS): src/03_get_prism_data.R src/utils/utils_get_prism_data.R src/utils/utils.R $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME) $(ALL_RAW_PRISM_FILE_PATHS)
 	mkdir -p $(OUTPUT_DIR)/environmental_data/$(CITY_FILE_SAFE)_$(YEAR)
 	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(OUTPUT_DIR) $(PRISM_DIR) "$(PRISM_VARS)"
+
+endif
 
 # 02b get boundary map plots
 $(OUTPUT_DIR)/boundary_map_plots/$(CITY_YEAR_OUTPUT_FILENAME): src/02b_get_boundary_map_plots.R src/utils/utils_shell.R src/utils/utils.R $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME) $(OUTPUT_DIR)/crs/$(CITY_YEAR_OUTPUT_FILENAME)
