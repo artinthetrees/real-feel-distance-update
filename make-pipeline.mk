@@ -24,8 +24,9 @@ include .env
 		check-names \
 		configtest
 
-all: configtest collect_data acs boundary_map_plots
+all: configtest real_feel acs boundary_map_plots
 
+real_feel: $(OUTPUT_DIR)/real_feel_distance_to_grocery/$(CITY_FILE_SAFE)_$(YEAR)/$(REAL_FEEL_MODEL_LABEL)_$(CITY_YEAR_OUTPUT_FILENAME)
 collect_data: $(OUTPUT_DIR)/collected_data/$(CITY_FILE_SAFE)_$(YEAR)/$(REAL_FEEL_MODEL_LABEL)_$(CITY_YEAR_OUTPUT_FILENAME)
 distance_to_grocery: $(OUTPUT_DIR)/distance_to_grocery/$(CITY_YEAR_OUTPUT_FILENAME)
 streetnet_products: $(OUTPUT_DIR)/street_network_products/$(CITY_YEAR_OUTPUT_FILENAME)
@@ -37,6 +38,12 @@ boundary_maps: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
 crs: $(OUTPUT_DIR)/boundary_maps/$(CITY_YEAR_OUTPUT_FILENAME)
 acs: $(OUTPUT_DIR)/acs_data/$(YEAR_OUTPUT_ACS_CODEBOOK_PARQUET) $(OUTPUT_DIR)/acs_data/$(STATE_YEAR_OUTPUT_ACS_PARQUET) $(OUTPUT_DIR)/acs_data/$(STATE_YEAR_OUTPUT_ACS_ESTIMATES_PARQUET)
 raw_prism: $(ALL_RAW_PRISM_FILE_PATHS)
+
+# 06 calculate real feel distance 
+# file dependencies: collected data
+$(OUTPUT_DIR)/real_feel_distance_to_grocery/$(CITY_FILE_SAFE)_$(YEAR)/$(REAL_FEEL_MODEL_LABEL)_$(CITY_YEAR_OUTPUT_FILENAME): src/06_get_real_feel_distance_to_grocery.R src/utils/utils.R $(OUTPUT_DIR)/collected_data/$(CITY_FILE_SAFE)_$(YEAR)/$(REAL_FEEL_MODEL_LABEL)_$(CITY_YEAR_OUTPUT_FILENAME)
+	mkdir -p $(OUTPUT_DIR)/real_feel_distance_to_grocery/$(CITY_FILE_SAFE)_$(YEAR)
+	$(R_SCRIPT) $< $(CITY) $(COUNTY) $(STATE) $(YEAR) $(OUTPUT_DIR) $(REAL_FEEL_MODEL_LABEL)
 
 # 05 collect distance to grocery and base environmental data that are directly used in real feel calc or used to calculate calculated environmental data that are used in real feel calc 
 # file dependencies: distance to grocery, processed prism data (if/when other sources added this should be changed to all processed environmental data)
