@@ -104,7 +104,7 @@ if (length(real_feel_vars_base)==0){
   message("there are 0 base environmental variables needed for real feel calculation, skipping collection of base environmental variables...")
 } else {
   message("there are ",length(real_feel_vars_base), " environmental variables needed for real feel calculation, starting collection of base environmental variables...")
-  #capture_base_vars_list <- list()
+  capture_base_vars_list <- list()
   #capture_source_vars_list <- list()
 
   for (var_base_def in real_feel_vars_base){
@@ -121,7 +121,7 @@ if (length(real_feel_vars_base)==0){
     message("base var: ",base_var)
     message("source var: ",source_var)
 
-    # capture_base_vars_list[[length(capture_base_vars_list) + 1]] <- base_var
+    capture_base_vars_list[[length(capture_base_vars_list) + 1]] <- base_var
     # capture_source_vars_list[[length(capture_source_vars_list) + 1]] <- source_var
 
     collect_data_df <- collect_environmental_data_var(base_var,source_var,summary_distances_df,collect_data_df,year_string,output_dir,city_year_output_fname_base)
@@ -134,7 +134,7 @@ if (length(real_feel_vars_to_calculate)==0){
   message("there are 0 calculated environmental variables needed for real feel calculation, skipping calculation of calculated environmental variables...")
 } else {
   message("there are ",length(real_feel_vars_to_calculate), "calculated environmental variables needed for real feel calculation, starting calculation of calculated environmental variables...")
-  #calc_vars_list <- list()
+  capture_calc_vars_list <- list()
 
   for (var_calc_def in real_feel_vars_to_calculate){
     # if (var_calc_def == ""){
@@ -148,7 +148,7 @@ if (length(real_feel_vars_to_calculate)==0){
     calc_var <- split_calc_var_from_base_vars[[1]]
     message("calc var: ", calc_var)
     
-    # calc_vars_list[[length(calc_vars_list) + 1]] <- calc_var
+    capture_calc_vars_list[[length(capture_calc_vars_list) + 1]] <- calc_var
     
     base_vars_raw <- split_calc_var_from_base_vars[[2]]
     base_vars <- lapply(as.list(strsplit(base_vars_raw,"\\s+")[[1]]),trimws)
@@ -191,7 +191,16 @@ if (length(real_feel_vars_to_calculate)==0){
 
 collect_data_df <- 
   collect_data_df %>%
-  mutate(dist_to_grocery = median_dist_to_grocery)
+  mutate(dist_to_grocery = median_dist_to_grocery) %>%
+  select(date,
+         tract_id,
+         dist_to_grocery,
+         any_of(unlist(capture_base_vars_list)),
+         any_of(unlist(capture_calc_vars_list)),
+         any_of(unlist(paste0(capture_base_vars_list,"_invalid"))),
+         any_of(unlist(paste0(capture_calc_vars_list,"_invalid"))),
+         everything()
+         )
 
 #################################################################
 # save for this step
