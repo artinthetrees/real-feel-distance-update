@@ -86,15 +86,15 @@ age_penalty <- 0.15
 
 # if temp is above ideal environmental temp for humans (70F) then set this dummy to 1
 temp_ref_f <- 70
-temp_abv70F_dummy <- quote(ifelse(temp >= weathermetrics::fahrenheit.to.celsius(temp_ref_f, round = 2),1,0))
-temp_abv70F_penalty <- 0.0056 
-temp_abv70F_penalty_young <- 0.0035 
+temp_abv_ref_dummy <- quote(ifelse(temp >= weathermetrics::fahrenheit.to.celsius(temp_ref_f, round = 2),1,0))
+temp_abv_ref_penalty <- 0.0056 
+temp_abv_ref_penalty_young <- 0.0035 
 # 5% decrease in aerobic capacity for every 10 degrees celsius >> 0.5% increase in 'distance' for every 1 degree celsius
 
 dewpointtemp_ref_f <- 55
-dewpointtemp_abv55F_dummy <- quote(ifelse(dewpointtemp >= weathermetrics::fahrenheit.to.celsius(dewpointtemp_ref_f, round = 2),1,0)) 
-dewpointtemp_abv55F_penalty <- 0.055
-dewpointtemp_abv55F_penalty_young <- 0.0077
+dewpointtemp_abv_ref_dummy <- quote(ifelse(dewpointtemp >= weathermetrics::fahrenheit.to.celsius(dewpointtemp_ref_f, round = 2),1,0)) 
+dewpointtemp_abv_ref_penalty <- 0.055
+dewpointtemp_abv_ref_penalty_young <- 0.0077
 
 # https://www.sciencedirect.com/science/article/pii/S0160412021004591
 # https://www.sciencedirect.com/science/article/pii/S0160412021004591
@@ -104,9 +104,9 @@ dewpointtemp_abv55F_penalty_young <- 0.0077
 # https://www.scielo.br/j/aabc/a/TPZpmfGmztHbBjJVnqJLNBv/?lang=en
 # https://repositorio-aberto.up.pt/bitstream/10216/114841/1/MonteiroCarvalho2013.pdf
 heatindex_ref_f <- 80
-heatindex_abv80F_dummy <- quote(ifelse(heatindex >= weathermetrics::fahrenheit.to.celsius(heatindex_ref_f, round = 2),1,0)) 
-heatindex_abv80F_penalty <- 0.075
-heatindex_abv80F_penalty_young <- 0.025
+heatindex_abv_ref_dummy <- quote(ifelse(heatindex >= weathermetrics::fahrenheit.to.celsius(heatindex_ref_f, round = 2),1,0)) 
+heatindex_abv_ref_penalty <- 0.075
+heatindex_abv_ref_penalty_young <- 0.025
 
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3377942/
 walking_dist <- 1000
@@ -114,9 +114,9 @@ walking_dist <- 1000
 
 real_feel_distance_df <- 
   collect_data_df %>%
-  mutate(temp_dummy = eval(temp_abv70F_dummy),
-         dewpointtemp_dummy = eval(dewpointtemp_abv55F_dummy),
-         heatindex_dummy = eval(heatindex_abv80F_dummy),
+  mutate(temp_dummy = eval(temp_abv_ref_dummy),
+         dewpointtemp_dummy = eval(dewpointtemp_abv_ref_dummy),
+         heatindex_dummy = eval(heatindex_abv_ref_dummy),
          
          # get the raw distance and calculate whether 
          raw_dist = dist_to_grocery,
@@ -124,15 +124,15 @@ real_feel_distance_df <-
 
          # older adult - calc the "penalty distance" due to each factor (age/environmental vars)
          age_dist = raw_dist*age_dummy*age_penalty,
-         temp_dist = raw_dist*temp_dummy*temp_abv70F_penalty*(temp - weathermetrics::fahrenheit.to.celsius(temp_ref_f, round = 2)),
-         dewpointtemp_dist = raw_dist*dewpointtemp_dummy*dewpointtemp_abv55F_penalty*(dewpointtemp - weathermetrics::fahrenheit.to.celsius(dewpointtemp_ref_f, round = 2)),
-         heatindex_dist = raw_dist*heatindex_dummy*heatindex_abv80F_penalty*(heatindex - weathermetrics::fahrenheit.to.celsius(heatindex_ref_f, round = 2)),
+         temp_dist = raw_dist*temp_dummy*temp_abv_ref_penalty*(temp - weathermetrics::fahrenheit.to.celsius(temp_ref_f, round = 2)),
+         dewpointtemp_dist = raw_dist*dewpointtemp_dummy*dewpointtemp_abv_ref_penalty*(dewpointtemp - weathermetrics::fahrenheit.to.celsius(dewpointtemp_ref_f, round = 2)),
+         heatindex_dist = raw_dist*heatindex_dummy*heatindex_abv_ref_penalty*(heatindex - weathermetrics::fahrenheit.to.celsius(heatindex_ref_f, round = 2)),
          
          # healthy young adult - calc the "penalty distance" due to each factor (age/environmental vars) - age_dummy_young is 0 so "penalty distance" due to age is always 0 here
          age_dist_young = raw_dist*age_dummy_young*age_penalty, # 
-         temp_dist_young = raw_dist*temp_dummy*temp_abv70F_penalty_young*(temp - weathermetrics::fahrenheit.to.celsius(temp_ref_f, round = 2)),
-         dewpointtemp_dist_young = raw_dist*dewpointtemp_dummy*dewpointtemp_abv55F_penalty_young*(dewpointtemp - weathermetrics::fahrenheit.to.celsius(dewpointtemp_ref_f, round = 2)),
-         heatindex_dist_young = raw_dist*heatindex_dummy*heatindex_abv80F_penalty_young*(heatindex - weathermetrics::fahrenheit.to.celsius(heatindex_ref_f, round = 2)),
+         temp_dist_young = raw_dist*temp_dummy*temp_abv_ref_penalty_young*(temp - weathermetrics::fahrenheit.to.celsius(temp_ref_f, round = 2)),
+         dewpointtemp_dist_young = raw_dist*dewpointtemp_dummy*dewpointtemp_abv_ref_penalty_young*(dewpointtemp - weathermetrics::fahrenheit.to.celsius(dewpointtemp_ref_f, round = 2)),
+         heatindex_dist_young = raw_dist*heatindex_dummy*heatindex_abv_ref_penalty_young*(heatindex - weathermetrics::fahrenheit.to.celsius(heatindex_ref_f, round = 2)),
          
          # older adults   
          real_feel_dist_age = 
