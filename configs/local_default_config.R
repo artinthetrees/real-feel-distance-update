@@ -11,3 +11,7 @@ osm_overpass_api_endpoint <- "https://overpass-api.de/api/interpreter"
 year_string <- as.character(year_num)
 prism_dir <- "raw_prism_data"
 prism_vars <- list("tmax","tdmean")
+
+real_feel_model_label <- "prism_heatindex"
+real_feel_vars_base <- list("temp from prism_tmax","dewpointtemp from prism_tdmean","")
+real_feel_vars_to_calculate <-list("heatindex from temp dewpointtemp","") 
