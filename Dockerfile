@@ -1,6 +1,6 @@
 # Use the official rocker geospatial image as a base
 # Includes R, RStudio, tidyverse, GDAL, PROJ, GEOS, and key spatial packages
-FROM rocker/geospatial:latest
+FROM rocker/geospatial:4.6.0
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
